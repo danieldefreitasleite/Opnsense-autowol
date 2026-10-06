@@ -35,7 +35,7 @@ No terminal SSH do seu OPNsense (como `root`), execute:
 
 ```sh
 cd /tmp
-git clone https://github.com/seu-usuario/Opnsense-autowol.git autowol
+git clone https://github.com/danieldefreitasleite/Opnsense-autowol.git autowol
 cd autowol
 chmod +x install.sh
 ./install.sh
