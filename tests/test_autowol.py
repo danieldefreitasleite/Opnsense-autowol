@@ -59,7 +59,64 @@ class TestWakeOnLan(unittest.TestCase):
         ok, msg = send_magic_packet("AA:BB:CC:DD:EE:FF", "192.168.1.255", 9)
         self.assertTrue(ok)
         self.assertIn("Magic Packet sent", msg)
-        mock_sock.sendto.assert_called_once()
+        self.assertTrue(mock_sock.sendto.called)
+
+    def test_resolve_broadcast_targets_from_xml(self):
+        import tempfile
+        from wol import resolve_broadcast_targets
+        sample_xml = """<opnsense>
+  <interfaces>
+    <lan>
+      <enable>1</enable>
+      <ipaddr>192.168.1.1</ipaddr>
+      <subnet>24</subnet>
+    </lan>
+    <opt1>
+      <enable>1</enable>
+      <ipaddr>10.0.0.1</ipaddr>
+      <subnet>16</subnet>
+    </opt1>
+  </interfaces>
+</opnsense>
+"""
+        with tempfile.NamedTemporaryFile("w", suffix=".xml", delete=False, encoding="utf-8") as tf:
+            tf.write(sample_xml)
+            tf_path = tf.name
+
+        try:
+            # When target IP is in LAN (192.168.1.50), it resolves LAN broadcast 192.168.1.255 first
+            targets = resolve_broadcast_targets(None, target_ip="192.168.1.50", xml_path=tf_path)
+            bcasts = [b for b, _ in targets]
+            self.assertEqual(bcasts[0], "192.168.1.255")
+
+            # When target IP is in OPT1 (10.0.5.20), it resolves OPT1 broadcast 10.0.255.255 first
+            targets_opt = resolve_broadcast_targets(None, target_ip="10.0.5.20", xml_path=tf_path)
+            bcasts_opt = [b for b, _ in targets_opt]
+            self.assertEqual(bcasts_opt[0], "10.0.255.255")
+        finally:
+            if os.path.exists(tf_path):
+                os.remove(tf_path)
+
+    @patch("shutil.which")
+    @patch("subprocess.run")
+    @patch("socket.socket")
+    def test_native_wol_execution(self, mock_sock, mock_subproc, mock_which):
+        from wol import send_magic_packet
+        mock_which.side_effect = lambda x: "/usr/local/bin/wol" if x == "wol" else None
+        mock_subproc.return_value = MagicMock(returncode=0, stdout="sent")
+
+        ok, msg = send_magic_packet("00:11:22:33:44:55", broadcast_ip="192.168.1.255", port=9)
+        self.assertTrue(ok)
+        self.assertIn("wol", msg)
+
+        # Verify /usr/local/bin/wol was invoked with -i 192.168.1.255
+        called_cmd = mock_subproc.call_args_list[0][0][0]
+        self.assertEqual(called_cmd[0], "/usr/local/bin/wol")
+        self.assertEqual(called_cmd[1], "-i")
+        self.assertEqual(called_cmd[2], "192.168.1.255")
+        self.assertEqual(called_cmd[3], "-p")
+        self.assertEqual(called_cmd[4], "9")
+        self.assertEqual(called_cmd[5], "00:11:22:33:44:55")
 
 
 class TestFormatMessages(unittest.TestCase):

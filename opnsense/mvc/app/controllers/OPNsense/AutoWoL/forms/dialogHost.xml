@@ -39,7 +39,7 @@
         <id>host.broadcast_ip</id>
         <label>IP de Broadcast</label>
         <type>text</type>
-        <help>Deixe em branco para usar o padrão (255.255.255.255) ou defina a sub-rede específica (ex: 192.168.1.255).</help>
+        <help>Deixe em branco ou 255.255.255.255 para detecção automática da sub-rede pelo IP da máquina (ex: 192.168.1.255), ou defina um broadcast manual.</help>
     </field>
     <field>
         <id>host.wol_port</id>

@@ -388,6 +388,7 @@ class AutoWoLEngine:
         """Cron mode: progresses retry counter with each periodic check."""
         h_name = host.get("name")
         mac = host.get("mac")
+        ip = host.get("ip")
         bcast = host.get("broadcast_ip") or self.settings.get("default_broadcast_ip", "255.255.255.255")
         port = int(host.get("wol_port") or self.settings.get("default_wol_port", 9))
 
@@ -408,7 +409,7 @@ class AutoWoLEngine:
             h_state["status"] = "WAKING"
             h_state["last_attempt_time"] = now_ts
             self.logger.info(f"Enviando Wake-on-LAN para '{h_name}' (Tentativa {attempts}/{max_retries})...")
-            send_magic_packet(mac, bcast, port)
+            send_magic_packet(mac, bcast, port, target_ip=ip)
             return {"status": "WAKING", "attempts": attempts, "details": f"WoL packet {attempts} sent"}
         else:
             # Exceeded max retries!
@@ -447,7 +448,7 @@ class AutoWoLEngine:
             h_state["status"] = "WAKING"
             h_state["last_attempt_time"] = time.time()
             self.logger.info(f"[Modo Imediato] Enviando WoL para '{h_name}' (Tentativa {attempt}/{max_retries})...")
-            send_magic_packet(mac, bcast, port)
+            send_magic_packet(mac, bcast, port, target_ip=ip)
 
             self.logger.info(f"[Modo Imediato] Aguardando {grace_period}s para inicialização da máquina...")
             time.sleep(grace_period)
@@ -507,10 +508,10 @@ class AutoWoLEngine:
 
         t_name = target.get("name") or host_identifier
         t_mac = target.get("mac")
+        t_ip = target.get("ip")
         bcast = target.get("broadcast_ip") or self.settings.get("default_broadcast_ip", "255.255.255.255")
         port = int(target.get("wol_port") or self.settings.get("default_wol_port", 9))
-
-        ok, wol_err = send_magic_packet(t_mac, bcast, port)
+        ok, wol_err = send_magic_packet(t_mac, bcast, port, target_ip=t_ip)
         if ok:
             # Update state immediately for real-time status reflection
             h_id = target.get("id") or target.get("name") or host_identifier
