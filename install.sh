@@ -80,10 +80,13 @@ chmod +x /usr/local/etc/rc.d/autowol
 
 # 12. Arquivo modelo inicial de configuração
 cp "$BASE_DIR"/etc/autowol/config.sample.json /usr/local/etc/autowol/config.sample.json
-if [ ! -f /usr/local/etc/autowol/config.json ]; then
+if [ ! -f /usr/local/etc/autowol/config.json ] || grep -q "Servidor NAS / Storage" /usr/local/etc/autowol/config.json 2>/dev/null; then
     cp /usr/local/etc/autowol/config.sample.json /usr/local/etc/autowol/config.json
     chmod 600 /usr/local/etc/autowol/config.json
 fi
+
+# Limpa estados de máquinas de exemplo anteriores
+rm -f /var/run/autowol_state.json*
 
 # 13. Limpeza de cache e reinicialização de serviços
 echo "Limpando caches de Volt e recarregando serviços..."
@@ -93,6 +96,11 @@ if service configd status >/dev/null 2>&1; then
     service configd restart
 elif [ -x "/usr/local/etc/rc.d/configd" ]; then
     /usr/local/etc/rc.d/configd restart
+fi
+
+# Recarrega templates do OPNsense
+if [ -x "/usr/local/bin/configctl" ]; then
+    /usr/local/bin/configctl template reload OPNsense/AutoWoL >/dev/null 2>&1 || true
 fi
 
 # Atualiza permissões e cache de navegação do OPNsense

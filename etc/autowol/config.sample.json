@@ -12,33 +12,7 @@
     "notify_on_recovery": true,
     "log_file": "/var/log/autowol.log"
   },
-  "hosts": [
-    {
-      "id": "srv-nas",
-      "name": "Servidor NAS / Storage",
-      "ip": "192.168.1.50",
-      "mac": "00:11:32:AA:BB:CC",
-      "broadcast_ip": "192.168.1.255",
-      "wol_port": 9,
-      "check_method": "icmp",
-      "max_retries": 3,
-      "boot_grace_period_seconds": 90,
-      "enabled": true
-    },
-    {
-      "id": "workstation-win",
-      "name": "Estação Windows 11",
-      "ip": "192.168.1.120",
-      "mac": "B4:2E:99:11:22:33",
-      "broadcast_ip": "192.168.1.255",
-      "wol_port": 9,
-      "check_method": "both",
-      "tcp_port": 3389,
-      "max_retries": 2,
-      "boot_grace_period_seconds": 60,
-      "enabled": true
-    }
-  ],
+  "hosts": [],
   "notifications": {
     "whatsapp": {
       "enabled": false,

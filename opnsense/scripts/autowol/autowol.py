@@ -190,6 +190,10 @@ class AutoWoLEngine:
     def check_all_hosts(self) -> dict[str, dict]:
         """Iterates over all enabled hosts and performs check / wake / alert lifecycle."""
         enabled_hosts = [h for h in self.hosts if h.get("enabled", True)]
+        if not enabled_hosts:
+            self.logger.info("=== Ciclo de Checagem AutoWoL: Nenhuma máquina cadastrada ou ativa para monitorar ===")
+            return {}
+
         self.logger.info(f"=== Ciclo de Checagem AutoWoL Iniciado ({len(enabled_hosts)} hosts ativos) ===")
         results = {}
         for host in enabled_hosts:
