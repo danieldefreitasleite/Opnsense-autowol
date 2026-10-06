@@ -348,14 +348,22 @@ class AutoWoLEngine:
                 break
 
         if not target:
-            self.logger.error(f"Host '{host_identifier}' não encontrado na lista de hosts.")
+            msg = f"Host '{host_identifier}' não encontrado na lista de máquinas."
+            self.logger.error(msg)
+            print(f"Erro: {msg}")
             return False
 
         bcast = target.get("broadcast_ip") or self.settings.get("default_broadcast_ip", "255.255.255.255")
         port = int(target.get("wol_port") or self.settings.get("default_wol_port", 9))
         ok, msg = send_magic_packet(target.get("mac"), bcast, port)
         if ok:
-            self.logger.info(f"Wake-on-LAN enviado para {target.get('name')}: {msg}")
+            succ_msg = f"Pacote WoL enviado para '{target.get('name')}' ({target.get('mac')}) via {bcast}:{port}."
+            self.logger.info(succ_msg)
+            print(succ_msg)
+        else:
+            err_msg = f"Falha ao enviar WoL para '{target.get('name')}': {msg}"
+            self.logger.error(err_msg)
+            print(err_msg)
         return ok
 
     def test_alert(self, channel: str = "all") -> dict:
@@ -387,6 +395,7 @@ def main():
     parser.add_argument("--config", "-c", help="Path to config.json")
     parser.add_argument("--state", "-s", help="Path to state.json")
     parser.add_argument("--host", help="Host ID or Name for 'wake' action")
+    parser.add_argument("--host-b64", help="Base64-encoded Host ID or Name for 'wake' action")
     parser.add_argument("--channel", default="all", help="Notification channel to test for 'test-alert'")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose debug output")
 
@@ -407,10 +416,23 @@ def main():
         results = engine.check_all_hosts()
         print(json.dumps(results, indent=2))
     elif args.action == "wake":
-        if not args.host:
-            logger.error("Ação 'wake' requer o parâmetro --host <nome_ou_id>")
+        host_target = args.host
+        if args.host_b64:
+            try:
+                import base64
+                host_target = base64.b64decode(args.host_b64.encode("utf-8")).decode("utf-8")
+            except Exception as e:
+                err_b64 = f"Erro ao decodificar base64: {e}"
+                logger.error(err_b64)
+                print(err_b64)
+                sys.exit(1)
+
+        if not host_target:
+            logger.error("Ação 'wake' requer o parâmetro --host ou --host-b64")
+            print("Erro: parâmetro host não informado.")
             sys.exit(1)
-        ok = engine.wake_single_host(args.host)
+
+        ok = engine.wake_single_host(host_target)
         sys.exit(0 if ok else 1)
     elif args.action == "status":
         overview = engine.get_status_overview()

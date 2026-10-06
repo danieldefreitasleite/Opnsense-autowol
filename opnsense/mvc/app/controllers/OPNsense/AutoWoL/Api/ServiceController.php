@@ -36,8 +36,9 @@ class ServiceController extends ApiControllerBase
         if ($this->request->isPost()) {
             $backend = new Backend();
             $host = $this->request->getPost('host', 'string', $hostId);
-            $response = $backend->configdRun("autowol wake {$host}");
-            return ['status' => 'ok', 'response' => $response];
+            $hostB64 = base64_encode(trim($host));
+            $response = trim($backend->configdRun("autowol wake {$hostB64}"));
+            return ['status' => 'ok', 'response' => $response ?: "Pacote WoL enviado."];
         }
         return ['status' => 'failed'];
     }
