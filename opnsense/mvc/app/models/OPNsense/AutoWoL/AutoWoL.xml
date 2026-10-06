@@ -32,8 +32,10 @@
                 <maximum>65535</maximum>
                 <Required>Y</Required>
             </default_wol_port>
-            <check_timeout_seconds type="FloatField">
-                <default>2.0</default>
+            <check_timeout_seconds type="IntegerField">
+                <default>2</default>
+                <minimum>1</minimum>
+                <maximum>30</maximum>
                 <Required>Y</Required>
             </check_timeout_seconds>
             <max_retries type="IntegerField">

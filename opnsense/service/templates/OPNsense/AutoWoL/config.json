@@ -3,7 +3,7 @@
     "retry_mode": "{{ OPNsense.AutoWoL.general.retry_mode|default('cron') }}",
     "default_broadcast_ip": "{{ OPNsense.AutoWoL.general.default_broadcast_ip|default('255.255.255.255') }}",
     "default_wol_port": {{ OPNsense.AutoWoL.general.default_wol_port|default('9') }},
-    "check_timeout_seconds": {{ OPNsense.AutoWoL.general.check_timeout_seconds|default('2.0') }},
+    "check_timeout_seconds": {{ OPNsense.AutoWoL.general.check_timeout_seconds|default('2') }},
     "max_retries": {{ OPNsense.AutoWoL.general.max_retries|default('3') }},
     "boot_grace_period_seconds": {{ OPNsense.AutoWoL.general.boot_grace_period_seconds|default('60') }},
     "alert_cooldown_minutes": {{ OPNsense.AutoWoL.general.alert_cooldown_minutes|default('120') }},
