@@ -233,6 +233,7 @@ class TestHostArgumentDecodingAndMatching(unittest.TestCase):
         ok, msg = engine.wake_single_host("c83e7428-1b54-469b-8e2b-f89a9f23e4d1")
         self.assertTrue(ok)
         self.assertIn("Servidor NAS", msg)
+        self.assertEqual(engine.state["c83e7428-1b54-469b-8e2b-f89a9f23e4d1"]["status"], "WAKING")
 
         # Match by Name (case insensitive)
         ok, msg = engine.wake_single_host("servidor nas")

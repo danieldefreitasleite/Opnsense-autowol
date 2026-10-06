@@ -519,6 +519,16 @@ class AutoWoLEngine:
 
         ok, wol_err = send_magic_packet(t_mac, bcast, port)
         if ok:
+            # Update state immediately for real-time status reflection
+            h_id = target.get("id") or target.get("name") or host_identifier
+            h_state = self.get_host_state(h_id)
+            h_state["status"] = "WAKING"
+            h_state["attempts"] = (h_state.get("attempts") or 0) + 1
+            h_state["last_attempt_time"] = time.time()
+            now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            h_state["last_details"] = f"Pacote WoL enviado manualmente às {now_str}"
+            save_state(self.state, self.state_file)
+
             succ_msg = f"Magic Packet (WoL) enviado com sucesso para '{t_name}' ({t_mac}) via {bcast}:{port}."
             self.logger.info(succ_msg)
             print(succ_msg)

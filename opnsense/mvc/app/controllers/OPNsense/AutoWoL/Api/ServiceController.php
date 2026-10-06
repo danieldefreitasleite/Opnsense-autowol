@@ -33,14 +33,38 @@ class ServiceController extends ApiControllerBase
 
     public function wakeAction($hostId = '')
     {
-        if ($this->request->isPost()) {
-            $backend = new Backend();
-            $host = $this->request->getPost('host', 'string', $hostId);
-            $hostHex = bin2hex(trim($host));
-            $response = trim($backend->configdRun("autowol wake {$hostHex}"));
-            return ['status' => 'ok', 'response' => $response ?: "Pacote WoL enviado com sucesso."];
+        $backend = new Backend();
+        $host = '';
+
+        if (!empty($hostId)) {
+            $host = $hostId;
         }
-        return ['status' => 'failed'];
+
+        if (empty($host) && $this->request->isPost()) {
+            if ($this->request->hasPost('host')) {
+                $host = $this->request->getPost('host');
+            } elseif ($this->request->has('host')) {
+                $host = $this->request->get('host');
+            } else {
+                $json = $this->request->getJsonRawBody(true);
+                if (is_array($json) && !empty($json['host'])) {
+                    $host = $json['host'];
+                }
+            }
+        }
+
+        if (empty($host)) {
+            $host = $this->request->get('host', 'string', '');
+        }
+
+        $host = trim($host);
+        if (empty($host)) {
+            return ['status' => 'failed', 'response' => 'Erro: Identificador ou nome da máquina não foi fornecido.'];
+        }
+
+        $hostHex = bin2hex($host);
+        $response = trim($backend->configdRun("autowol wake {$hostHex}"));
+        return ['status' => 'ok', 'response' => $response ?: "Pacote WoL enviado para {$host}."];
     }
 
     public function statusAction()
@@ -51,7 +75,26 @@ class ServiceController extends ApiControllerBase
         if (!is_array($data)) {
             $data = [];
         }
-        return ['status' => 'ok', 'data' => $data];
+
+        $cronActive = false;
+        $cronSchedule = '';
+        $cronFile = '/usr/local/etc/cron.d/autowol.cron';
+        if (file_exists($cronFile)) {
+            $cronContent = file_get_contents($cronFile);
+            if (strpos($cronContent, 'autowol.py') !== false) {
+                $cronActive = true;
+                if (preg_match('/(\*\/[0-9]+|\*)\s+\*\s+\*\s+\*\s+\*/', $cronContent, $m)) {
+                    $cronSchedule = $m[0];
+                }
+            }
+        }
+
+        return [
+            'status' => 'ok',
+            'data' => $data,
+            'cron_active' => $cronActive,
+            'cron_schedule' => $cronSchedule
+        ];
     }
 
     public function logsAction()

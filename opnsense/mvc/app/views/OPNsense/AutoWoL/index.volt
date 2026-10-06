@@ -33,6 +33,7 @@
             $("#grid-hosts").find(".command-wake").on("click", function(e) {
                 var hostName = $(this).data("row-name");
                 var hostId = $(this).data("row-id");
+                var targetId = hostId || hostName;
                 BootstrapDialog.confirm({
                     title: "{{ lang._('Wake-on-LAN') }}",
                     message: "{{ lang._('Deseja enviar o pacote Wake-on-LAN para: ') }}<strong>" + hostName + "</strong>?",
@@ -41,7 +42,7 @@
                     btnCancelLabel: "{{ lang._('Cancelar') }}",
                     callback: function(result) {
                         if (result) {
-                            ajaxCall("/api/autowol/service/wake", {'host': hostId || hostName}, function(data, status) {
+                            ajaxCall("/api/autowol/service/wake/" + encodeURIComponent(targetId), {'host': targetId}, function(data, status) {
                                 BootstrapDialog.show({
                                     title: "{{ lang._('Resultado WoL') }}",
                                     message: data.response || "{{ lang._('Pacote enviado com sucesso!') }}",
@@ -123,12 +124,26 @@
             });
         });
 
-        // Carrega aba de status em tempo real (Array de hosts formatado)
+        // Carrega aba de status em tempo real (Array de hosts formatado com banner do Cron)
         function loadStatus() {
             ajaxCall("/api/autowol/service/status", {}, function(data, status) {
+                var cronBanner = "";
+                if (data.cron_active) {
+                    cronBanner = "<div class='alert alert-success' style='margin-bottom: 15px;'>" +
+                                 "<i class='fa fa-clock-o'></i> <strong>{{ lang._('Agendador Automático (Cron):') }}</strong> <span class='label label-success'>ATIVO</span> " +
+                                 "{{ lang._('O sistema está monitorando suas máquinas automaticamente no ciclo:') }} <code>" + (data.cron_schedule || "*/2 * * * *") + "</code>." +
+                                 "</div>";
+                } else {
+                    cronBanner = "<div class='alert alert-warning' style='margin-bottom: 15px;'>" +
+                                 "<i class='fa fa-exclamation-triangle'></i> <strong>{{ lang._('Agendador Automático (Cron):') }}</strong> <span class='label label-warning'>DESATIVADO / NÃO ATIVADO</span> " +
+                                 "{{ lang._('Para ativar a checagem automática, acesse a aba Configurações Gerais, marque \"Ativar AutoWoL\" e clique no botão azul \"Salvar e Aplicar Alterações\".') }}" +
+                                 "</div>";
+                }
+
                 if (data.data && Array.isArray(data.data)) {
                     if (data.data.length === 0) {
                         $("#status_container").html(
+                            cronBanner +
                             "<div class='alert alert-warning'>" +
                             "<i class='fa fa-exclamation-triangle'></i> {{ lang._('Nenhuma máquina cadastrada ainda. Adicione seus computadores na aba Máquinas / Servidores.') }}" +
                             "</div>"
@@ -136,7 +151,7 @@
                         return;
                     }
 
-                    var html = "<table class='table table-striped table-hover table-bordered'><thead><tr>" +
+                    var html = cronBanner + "<table class='table table-striped table-hover table-bordered'><thead><tr>" +
                                "<th>{{ lang._('Máquina') }}</th>" +
                                "<th>{{ lang._('IP') }}</th>" +
                                "<th>{{ lang._('MAC') }}</th>" +
@@ -187,7 +202,8 @@
                     $(".status-wake-btn").click(function() {
                         var hName = $(this).data("name");
                         var hId = $(this).data("id");
-                        ajaxCall("/api/autowol/service/wake", {'host': hId || hName}, function(wdata, wstatus) {
+                        var targetId = hId || hName;
+                        ajaxCall("/api/autowol/service/wake/" + encodeURIComponent(targetId), {'host': targetId}, function(wdata, wstatus) {
                             BootstrapDialog.show({
                                 title: "{{ lang._('Wake-on-LAN') }}",
                                 message: wdata.response || "Pacote WoL enviado para " + hName,
@@ -197,6 +213,7 @@
                     });
                 } else {
                     $("#status_container").html(
+                        cronBanner +
                         "<div class='alert alert-info'><i class='fa fa-info-circle'></i> {{ lang._('Nenhum dado de status retornado. Clique em Checar Hosts Agora no topo.') }}</div>"
                     );
                 }
