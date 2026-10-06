@@ -79,22 +79,159 @@ def setup_logging(verbose: bool = False, log_file: str = None) -> logging.Logger
     return logger
 
 
+def load_from_opnsense_xml(xml_path: str = "/conf/config.xml") -> dict | None:
+    """Parses OPNsense /conf/config.xml directly to extract live AutoWoL configuration."""
+    p = Path(xml_path)
+    if not p.is_file():
+        return None
+    try:
+        import xml.etree.ElementTree as ET
+        tree = ET.parse(str(p))
+        root = tree.getroot()
+        autowol_node = root.find(".//AutoWoL")
+        if autowol_node is None:
+            for elem in root.iter():
+                if elem.tag.lower() == "autowol":
+                    autowol_node = elem
+                    break
+        if autowol_node is None:
+            return None
+
+        # Parse general settings
+        general = {}
+        gen_node = autowol_node.find("general")
+        if gen_node is not None:
+            for child in gen_node:
+                general[child.tag] = child.text.strip() if child.text else ""
+
+        # Parse hosts
+        hosts = []
+        hosts_node = autowol_node.find("hosts")
+        if hosts_node is not None:
+            for h in hosts_node.findall("host"):
+                h_uuid = h.attrib.get("uuid", "")
+                h_dict = {"id": h_uuid}
+                for child in h:
+                    h_dict[child.tag] = child.text.strip() if child.text else ""
+
+                if not h_dict.get("name") and not h_dict.get("mac") and not h_dict.get("ip"):
+                    continue
+
+                h_dict["enabled"] = str(h_dict.get("enabled", "1")).strip() in ("1", "true", "True")
+                try:
+                    h_dict["wol_port"] = int(h_dict.get("wol_port") or 9)
+                except (ValueError, TypeError):
+                    h_dict["wol_port"] = 9
+                try:
+                    h_dict["max_retries"] = int(h_dict.get("max_retries") or 3)
+                except (ValueError, TypeError):
+                    h_dict["max_retries"] = 3
+                try:
+                    h_dict["boot_grace_period_seconds"] = int(h_dict.get("boot_grace_period_seconds") or 60)
+                except (ValueError, TypeError):
+                    h_dict["boot_grace_period_seconds"] = 60
+
+                tcp_p = h_dict.get("tcp_port")
+                if tcp_p:
+                    try:
+                        h_dict["tcp_port"] = int(tcp_p)
+                    except (ValueError, TypeError):
+                        h_dict["tcp_port"] = None
+                else:
+                    h_dict["tcp_port"] = None
+
+                hosts.append(h_dict)
+
+        # Parse notifications
+        notifications = {}
+        notif_node = autowol_node.find("notifications")
+        if notif_node is not None:
+            for ch in notif_node:
+                ch_dict = {}
+                for child in ch:
+                    val = child.text.strip() if child.text else ""
+                    if child.tag in ("enabled", "use_tls", "use_ssl"):
+                        ch_dict[child.tag] = val in ("1", "true", "True")
+                    elif child.tag == "port":
+                        try:
+                            ch_dict["port"] = int(val)
+                        except (ValueError, TypeError):
+                            ch_dict["port"] = 587
+                    elif child.tag == "to_addrs":
+                        ch_dict["to_addrs"] = [x.strip() for x in val.split(",") if x.strip()]
+                    else:
+                        ch_dict[child.tag] = val
+                notifications[ch.tag] = ch_dict
+
+        return {
+            "settings": {
+                "retry_mode": general.get("retry_mode", "cron"),
+                "default_broadcast_ip": general.get("default_broadcast_ip", "255.255.255.255"),
+                "default_wol_port": int(general.get("default_wol_port") or 9),
+                "check_timeout_seconds": float(general.get("check_timeout_seconds") or 2),
+                "max_retries": int(general.get("max_retries") or 3),
+                "boot_grace_period_seconds": int(general.get("boot_grace_period_seconds") or 60),
+                "alert_cooldown_minutes": int(general.get("alert_cooldown_minutes") or 120),
+                "repeat_alerts": str(general.get("repeat_alerts", "0")).strip() in ("1", "true", "True"),
+                "notify_on_recovery": str(general.get("notify_on_recovery", "1")).strip() in ("1", "true", "True"),
+                "log_file": "/var/log/autowol.log"
+            },
+            "hosts": hosts,
+            "notifications": notifications
+        }
+    except Exception as e:
+        sys.stderr.write(f"Aviso ao ler XML {xml_path}: {e}\n")
+        return None
+
+
 def load_config(config_path: str = None) -> dict:
-    """Loads configuration from specified or default paths."""
-    candidates = [config_path] if config_path else DEFAULT_CONFIG_PATHS
-    chosen_path = None
-    for p in candidates:
+    """Loads configuration: checks explicit path, then /conf/config.xml, then config.json."""
+    if config_path and Path(config_path).is_file():
+        if config_path.endswith(".xml"):
+            xml_cfg = load_from_opnsense_xml(config_path)
+            if xml_cfg:
+                return xml_cfg
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    # 1. Attempt reading live OPNsense config.xml directly
+    xml_cfg = load_from_opnsense_xml("/conf/config.xml")
+    if xml_cfg and xml_cfg.get("hosts"):
+        return xml_cfg
+
+    # 2. Check JSON config candidates
+    for p in DEFAULT_CONFIG_PATHS:
         if p and Path(p).is_file():
-            chosen_path = p
-            break
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if xml_cfg and not data.get("hosts") and xml_cfg.get("hosts"):
+                        data["hosts"] = xml_cfg["hosts"]
+                    return data
+            except Exception:
+                continue
 
-    if not chosen_path:
-        raise FileNotFoundError(
-            f"Configuration file not found. Checked: {', '.join(str(p) for p in candidates if p)}"
-        )
+    # 3. Fall back to XML config even if hosts is empty
+    if xml_cfg:
+        return xml_cfg
 
-    with open(chosen_path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    # 4. Fallback safe default
+    return {
+        "settings": {
+            "retry_mode": "cron",
+            "default_broadcast_ip": "255.255.255.255",
+            "default_wol_port": 9,
+            "check_timeout_seconds": 2.0,
+            "max_retries": 3,
+            "boot_grace_period_seconds": 60,
+            "alert_cooldown_minutes": 120,
+            "repeat_alerts": False,
+            "notify_on_recovery": True,
+            "log_file": "/var/log/autowol.log"
+        },
+        "hosts": [],
+        "notifications": {}
+    }
 
 
 def load_state(state_path: str = None) -> tuple[dict, str]:
@@ -339,32 +476,58 @@ class AutoWoLEngine:
         dispatch_alerts(self.notifications, host, event="alert", attempts=max_retries, max_retries=max_retries)
         return {"status": "ALERTED", "attempts": max_retries, "details": "Boot failed after all retries"}
 
-    def wake_single_host(self, host_identifier: str) -> bool:
-        """Sends a manual Wake-on-LAN packet to a single host by ID or name."""
+    def wake_single_host(self, host_identifier: str) -> tuple[bool, str]:
+        """
+        Sends a manual Wake-on-LAN packet to a single host by UUID, Name, IP, or MAC.
+        Returns (success: bool, message: str).
+        """
         target = None
+        ident_clean = host_identifier.strip().lower()
+        ident_mac_clean = ident_clean.replace("-", ":").replace(".", "")
+
         for h in self.hosts:
-            if h.get("id") == host_identifier or h.get("name") == host_identifier:
+            h_id = str(h.get("id", "")).strip().lower()
+            h_name = str(h.get("name", "")).strip().lower()
+            h_ip = str(h.get("ip", "")).strip().lower()
+            h_mac = str(h.get("mac", "")).strip().lower().replace("-", ":").replace(".", "")
+
+            if ident_clean in (h_id, h_name, h_ip) or (ident_mac_clean and ident_mac_clean == h_mac):
                 target = h
                 break
 
+        # Fallback: check if the identifier itself is a MAC address
+        import re
+        mac_pattern = r"^([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})$|^[0-9a-fA-F]{12}$"
+        if not target and re.match(mac_pattern, host_identifier.strip()):
+            target = {
+                "name": f"Dispositivo MAC ({host_identifier})",
+                "mac": host_identifier.strip(),
+                "broadcast_ip": self.settings.get("default_broadcast_ip", "255.255.255.255"),
+                "wol_port": self.settings.get("default_wol_port", 9)
+            }
+
         if not target:
-            msg = f"Host '{host_identifier}' não encontrado na lista de máquinas."
+            msg = f"Máquina '{host_identifier}' não encontrada na configuração."
             self.logger.error(msg)
             print(f"Erro: {msg}")
-            return False
+            return False, msg
 
+        t_name = target.get("name") or host_identifier
+        t_mac = target.get("mac")
         bcast = target.get("broadcast_ip") or self.settings.get("default_broadcast_ip", "255.255.255.255")
         port = int(target.get("wol_port") or self.settings.get("default_wol_port", 9))
-        ok, msg = send_magic_packet(target.get("mac"), bcast, port)
+
+        ok, wol_err = send_magic_packet(t_mac, bcast, port)
         if ok:
-            succ_msg = f"Pacote WoL enviado para '{target.get('name')}' ({target.get('mac')}) via {bcast}:{port}."
+            succ_msg = f"Magic Packet (WoL) enviado com sucesso para '{t_name}' ({t_mac}) via {bcast}:{port}."
             self.logger.info(succ_msg)
             print(succ_msg)
+            return True, succ_msg
         else:
-            err_msg = f"Falha ao enviar WoL para '{target.get('name')}': {msg}"
+            err_msg = f"Falha ao enviar WoL para '{t_name}' ({t_mac}): {wol_err}"
             self.logger.error(err_msg)
-            print(err_msg)
-        return ok
+            print(f"Erro: {err_msg}")
+            return False, err_msg
 
     def test_alert(self, channel: str = "all") -> dict:
         """Sends a test alert across notification channels."""
@@ -384,6 +547,34 @@ class AutoWoLEngine:
         return dispatch_alerts(cfg, test_host, event="alert", attempts=1, max_retries=3)
 
 
+def decode_host_argument(raw_val: str) -> str:
+    """Decodes host argument which may be hex-encoded, base64-encoded, or plain text."""
+    if not raw_val:
+        return ""
+    val = raw_val.strip()
+
+    # 1. Try Hex decode (only if even length and valid hex)
+    if len(val) >= 2 and len(val) % 2 == 0 and all(c in "0123456789abcdefABCDEF" for c in val):
+        try:
+            decoded = bytes.fromhex(val).decode("utf-8")
+            if decoded.isprintable():
+                return decoded
+        except Exception:
+            pass
+
+    # 2. Try Base64 decode
+    try:
+        import base64
+        decoded = base64.b64decode(val.encode("utf-8")).decode("utf-8")
+        if decoded.isprintable():
+            return decoded
+    except Exception:
+        pass
+
+    # 3. Plain text
+    return val
+
+
 def main():
     parser = argparse.ArgumentParser(description="OPNsense AutoWoL & Host Monitor Daemon")
     parser.add_argument(
@@ -392,23 +583,24 @@ def main():
         default="check",
         help="Action to execute"
     )
-    parser.add_argument("--config", "-c", help="Path to config.json")
+    parser.add_argument("--config", "-c", help="Path to config.json or config.xml")
     parser.add_argument("--state", "-s", help="Path to state.json")
-    parser.add_argument("--host", help="Host ID or Name for 'wake' action")
-    parser.add_argument("--host-b64", help="Base64-encoded Host ID or Name for 'wake' action")
+    parser.add_argument("--host", help="Host ID, Name, or MAC for 'wake' action")
+    parser.add_argument("--host-arg", help="Universal encoded Host ID, Name, or MAC for 'wake' action")
+    parser.add_argument("--host-hex", help="Hex-encoded Host ID, Name, or MAC for 'wake' action")
+    parser.add_argument("--host-b64", help="Base64-encoded Host ID, Name, or MAC for 'wake' action")
     parser.add_argument("--channel", default="all", help="Notification channel to test for 'test-alert'")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose debug output")
 
     args = parser.parse_args()
 
-    try:
-        cfg = load_config(args.config)
-    except Exception as e:
-        print(f"Erro ao carregar configuração: {e}", file=sys.stderr)
-        sys.exit(1)
+    # Setup logger immediately so any invocation is recorded in /var/log/autowol.log
+    logger = setup_logging(verbose=args.verbose)
 
+    cfg = load_config(args.config)
     log_file = cfg.get("settings", {}).get("log_file")
-    logger = setup_logging(verbose=args.verbose, log_file=log_file)
+    if log_file:
+        logger = setup_logging(verbose=args.verbose, log_file=log_file)
 
     engine = AutoWoLEngine(cfg, state_path=args.state, logger=logger)
 
@@ -416,23 +608,16 @@ def main():
         results = engine.check_all_hosts()
         print(json.dumps(results, indent=2))
     elif args.action == "wake":
-        host_target = args.host
-        if args.host_b64:
-            try:
-                import base64
-                host_target = base64.b64decode(args.host_b64.encode("utf-8")).decode("utf-8")
-            except Exception as e:
-                err_b64 = f"Erro ao decodificar base64: {e}"
-                logger.error(err_b64)
-                print(err_b64)
-                sys.exit(1)
-
-        if not host_target:
-            logger.error("Ação 'wake' requer o parâmetro --host ou --host-b64")
-            print("Erro: parâmetro host não informado.")
+        raw_val = args.host_arg or args.host_hex or args.host_b64 or args.host
+        if not raw_val:
+            err_msg = "Ação 'wake' requer o parâmetro de máquina/host."
+            logger.error(err_msg)
+            print(f"Erro: {err_msg}")
             sys.exit(1)
 
-        ok = engine.wake_single_host(host_target)
+        host_target = decode_host_argument(raw_val)
+        logger.info(f"Comando WoL manual solicitado para: '{host_target}'")
+        ok, _ = engine.wake_single_host(host_target)
         sys.exit(0 if ok else 1)
     elif args.action == "status":
         overview = engine.get_status_overview()

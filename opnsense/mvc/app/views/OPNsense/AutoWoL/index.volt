@@ -32,6 +32,7 @@
             // Ação do botão "Ligar Agora (WoL)"
             $("#grid-hosts").find(".command-wake").on("click", function(e) {
                 var hostName = $(this).data("row-name");
+                var hostId = $(this).data("row-id");
                 BootstrapDialog.confirm({
                     title: "{{ lang._('Wake-on-LAN') }}",
                     message: "{{ lang._('Deseja enviar o pacote Wake-on-LAN para: ') }}<strong>" + hostName + "</strong>?",
@@ -40,7 +41,7 @@
                     btnCancelLabel: "{{ lang._('Cancelar') }}",
                     callback: function(result) {
                         if (result) {
-                            ajaxCall("/api/autowol/service/wake", {'host': hostName}, function(data, status) {
+                            ajaxCall("/api/autowol/service/wake", {'host': hostId || hostName}, function(data, status) {
                                 BootstrapDialog.show({
                                     title: "{{ lang._('Resultado WoL') }}",
                                     message: data.response || "{{ lang._('Pacote enviado com sucesso!') }}",
@@ -176,7 +177,7 @@
                         html += "<td>" + attemptsText + "</td>";
                         html += "<td>" + (item.last_seen_online || "Ainda não detectado") + "</td>";
                         html += "<td><small>" + (item.last_details || "Aguardando verificação") + "</small></td>";
-                        html += "<td><button type='button' class='btn btn-xs btn-success status-wake-btn' data-name='" + item.name + "' title='Ligar agora com WoL'><i class='fa fa-power-off'></i> WoL</button></td>";
+                        html += "<td><button type='button' class='btn btn-xs btn-success status-wake-btn' data-id='" + item.id + "' data-name='" + item.name + "' title='Ligar agora com WoL'><i class='fa fa-power-off'></i> WoL</button></td>";
                         html += "</tr>";
                     });
 
@@ -185,7 +186,8 @@
 
                     $(".status-wake-btn").click(function() {
                         var hName = $(this).data("name");
-                        ajaxCall("/api/autowol/service/wake", {'host': hName}, function(wdata, wstatus) {
+                        var hId = $(this).data("id");
+                        ajaxCall("/api/autowol/service/wake", {'host': hId || hName}, function(wdata, wstatus) {
                             BootstrapDialog.show({
                                 title: "{{ lang._('Wake-on-LAN') }}",
                                 message: wdata.response || "Pacote WoL enviado para " + hName,

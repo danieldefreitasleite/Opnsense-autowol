@@ -12,13 +12,13 @@
     "log_file": "/var/log/autowol.log"
   },
   "hosts": [
-    {% if OPNsense.AutoWoL.hosts is defined and OPNsense.AutoWoL.hosts.host is defined %}
+    {% if OPNsense.AutoWoL.hosts is defined and OPNsense.AutoWoL.hosts.host is defined and OPNsense.AutoWoL.hosts.host is mapping %}
     {% for host_uuid, host in OPNsense.AutoWoL.hosts.host.items() %}
     {
       "id": "{{ host_uuid }}",
-      "name": "{{ host.name }}",
-      "ip": "{{ host.ip }}",
-      "mac": "{{ host.mac }}",
+      "name": "{{ host.name|default('') }}",
+      "ip": "{{ host.ip|default('') }}",
+      "mac": "{{ host.mac|default('') }}",
       "broadcast_ip": "{{ host.broadcast_ip|default('255.255.255.255') }}",
       "wol_port": {{ host.wol_port|default('9') }},
       "check_method": "{{ host.check_method|default('icmp') }}",

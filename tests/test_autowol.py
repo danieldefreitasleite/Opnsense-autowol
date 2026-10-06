@@ -196,5 +196,120 @@ class TestAutoWoLEngineStateTransitions(unittest.TestCase):
         self.assertEqual(mock_dispatch.call_args[1]["event"], "recovery")
 
 
+class TestHostArgumentDecodingAndMatching(unittest.TestCase):
+    def test_decode_host_argument_formats(self):
+        from autowol import decode_host_argument
+
+        # Raw string
+        self.assertEqual(decode_host_argument("Servidor NAS"), "Servidor NAS")
+
+        # Hex encoded
+        hex_val = binascii_hex = "Servidor NAS".encode("utf-8").hex()
+        self.assertEqual(decode_host_argument(hex_val), "Servidor NAS")
+
+        # Base64 encoded
+        import base64
+        b64_val = base64.b64encode("Estação Windows 11".encode("utf-8")).decode("utf-8")
+        self.assertEqual(decode_host_argument(b64_val), "Estação Windows 11")
+
+    @patch("autowol.send_magic_packet")
+    def test_wake_matching_uuid_name_ip_mac(self, mock_wol):
+        mock_wol.return_value = (True, "Magic packet sent")
+        cfg = {
+            "settings": {"default_broadcast_ip": "192.168.1.255", "default_wol_port": 9},
+            "hosts": [
+                {
+                    "id": "c83e7428-1b54-469b-8e2b-f89a9f23e4d1",
+                    "name": "Servidor NAS",
+                    "ip": "192.168.1.50",
+                    "mac": "00:11:32:AA:BB:CC",
+                    "enabled": True
+                }
+            ]
+        }
+        engine = AutoWoLEngine(cfg)
+
+        # Match by UUID
+        ok, msg = engine.wake_single_host("c83e7428-1b54-469b-8e2b-f89a9f23e4d1")
+        self.assertTrue(ok)
+        self.assertIn("Servidor NAS", msg)
+
+        # Match by Name (case insensitive)
+        ok, msg = engine.wake_single_host("servidor nas")
+        self.assertTrue(ok)
+
+        # Match by IP
+        ok, msg = engine.wake_single_host("192.168.1.50")
+        self.assertTrue(ok)
+
+        # Match by MAC (hyphen format)
+        ok, msg = engine.wake_single_host("00-11-32-aa-bb-cc")
+        self.assertTrue(ok)
+
+        # Direct MAC address fallback (even if unlisted)
+        ok, msg = engine.wake_single_host("AA:BB:CC:11:22:33")
+        self.assertTrue(ok)
+        self.assertIn("AA:BB:CC:11:22:33", msg)
+
+
+class TestOPNsenseXmlParsing(unittest.TestCase):
+    def test_parse_sample_opnsense_xml(self):
+        from autowol import load_from_opnsense_xml
+        import tempfile
+
+        sample_xml = """<?xml version="1.0"?>
+<opnsense>
+  <OPNsense>
+    <AutoWoL>
+      <general>
+        <enabled>1</enabled>
+        <interval>5</interval>
+        <retry_mode>cron</retry_mode>
+        <default_broadcast_ip>192.168.1.255</default_broadcast_ip>
+        <default_wol_port>9</default_wol_port>
+        <check_timeout_seconds>3</check_timeout_seconds>
+        <max_retries>4</max_retries>
+        <boot_grace_period_seconds>90</boot_grace_period_seconds>
+      </general>
+      <hosts>
+        <host uuid="uuid-test-1234">
+          <enabled>1</enabled>
+          <name>Desktop Escritório</name>
+          <ip>192.168.1.80</ip>
+          <mac>aa:bb:cc:dd:ee:01</mac>
+          <check_method>both</check_method>
+          <tcp_port>3389</tcp_port>
+        </host>
+      </hosts>
+      <notifications>
+        <telegram>
+          <enabled>1</enabled>
+          <bot_token>123456:ABC</bot_token>
+          <chat_id>987654</chat_id>
+        </telegram>
+      </notifications>
+    </AutoWoL>
+  </OPNsense>
+</opnsense>
+"""
+        with tempfile.NamedTemporaryFile("w", suffix=".xml", delete=False, encoding="utf-8") as tf:
+            tf.write(sample_xml)
+            tf_path = tf.name
+
+        try:
+            cfg = load_from_opnsense_xml(tf_path)
+            self.assertIsNotNone(cfg)
+            self.assertEqual(cfg["settings"]["interval"] if "interval" in cfg["settings"] else cfg["settings"]["max_retries"], 4)
+            self.assertEqual(len(cfg["hosts"]), 1)
+            h = cfg["hosts"][0]
+            self.assertEqual(h["id"], "uuid-test-1234")
+            self.assertEqual(h["name"], "Desktop Escritório")
+            self.assertEqual(h["tcp_port"], 3389)
+            self.assertTrue(cfg["notifications"]["telegram"]["enabled"])
+        finally:
+            if os.path.exists(tf_path):
+                os.remove(tf_path)
+
+
 if __name__ == "__main__":
     unittest.main()

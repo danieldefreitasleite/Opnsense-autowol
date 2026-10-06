@@ -85,6 +85,10 @@ if [ ! -f /usr/local/etc/autowol/config.json ] || grep -q "Servidor NAS / Storag
     chmod 600 /usr/local/etc/autowol/config.json
 fi
 
+# Assegura que o arquivo de log existe com permissões adequadas
+touch /var/log/autowol.log
+chmod 666 /var/log/autowol.log
+
 # Limpa estados de máquinas de exemplo anteriores
 rm -f /var/run/autowol_state.json*
 
