@@ -1,0 +1,2 @@
+config.json: /usr/local/etc/autowol/config.json
+autowol.cron: /usr/local/etc/cron.d/autowol.cron

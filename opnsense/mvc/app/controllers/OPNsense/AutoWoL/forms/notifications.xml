@@ -1,0 +1,173 @@
+<form>
+    <!-- WhatsApp -->
+    <field>
+        <id>notifications.whatsapp.enabled</id>
+        <label>Ativar WhatsApp</label>
+        <type>checkbox</type>
+        <help>Habilita alertas via WhatsApp.</help>
+    </field>
+    <field>
+        <id>notifications.whatsapp.provider</id>
+        <label>Provedor WhatsApp</label>
+        <type>dropdown</type>
+        <help>Escolha o serviço: CallMeBot (gratuito para homelab), Evolution API (self-hosted), Z-API ou Twilio.</help>
+    </field>
+    <field>
+        <id>notifications.whatsapp.phone</id>
+        <label>Número de Telefone</label>
+        <type>text</type>
+        <help>Telefone de destino com DDI e DDD (ex: +5511999999999).</help>
+    </field>
+    <field>
+        <id>notifications.whatsapp.apikey</id>
+        <label>API Key / Token (CallMeBot / Evolution)</label>
+        <type>password</type>
+        <help>Chave de API do CallMeBot ou da Evolution API.</help>
+    </field>
+    <field>
+        <id>notifications.whatsapp.server_url</id>
+        <label>URL do Servidor (Evolution API)</label>
+        <type>text</type>
+        <help>Ex: https://evolution.seuhomelab.com</help>
+    </field>
+    <field>
+        <id>notifications.whatsapp.instance</id>
+        <label>Nome da Instância (Evolution / Z-API)</label>
+        <type>text</type>
+        <help>Nome da instância conectada no servidor de WhatsApp.</help>
+    </field>
+
+    <!-- Telegram -->
+    <field>
+        <id>notifications.telegram.enabled</id>
+        <label>Ativar Telegram</label>
+        <type>checkbox</type>
+        <help>Habilita alertas instantâneos via bot do Telegram (gratuito).</help>
+    </field>
+    <field>
+        <id>notifications.telegram.bot_token</id>
+        <label>Token do Bot (BotFather)</label>
+        <type>password</type>
+        <help>Token fornecido pelo @BotFather (ex: 123456789:ABCdef...).</help>
+    </field>
+    <field>
+        <id>notifications.telegram.chat_id</id>
+        <label>Chat ID do Telegram</label>
+        <type>text</type>
+        <help>ID numérico do chat ou grupo (obtido via @userinfobot).</help>
+    </field>
+
+    <!-- Email -->
+    <field>
+        <id>notifications.email.enabled</id>
+        <label>Ativar Email (SMTP)</label>
+        <type>checkbox</type>
+        <help>Habilita envio de alertas por e-mail.</help>
+    </field>
+    <field>
+        <id>notifications.email.host</id>
+        <label>Servidor SMTP</label>
+        <type>text</type>
+        <help>Endereço do servidor SMTP (ex: smtp.gmail.com ou 192.168.1.5).</help>
+    </field>
+    <field>
+        <id>notifications.email.port</id>
+        <label>Porta SMTP</label>
+        <type>text</type>
+        <help>Porta de conexão (587 para STARTTLS, 465 para SSL ou 25 para padrão).</help>
+    </field>
+    <field>
+        <id>notifications.email.use_tls</id>
+        <label>Usar STARTTLS</label>
+        <type>checkbox</type>
+        <help>Recomendado para portas 587 (Gmail, Outlook, etc.).</help>
+    </field>
+    <field>
+        <id>notifications.email.username</id>
+        <label>Usuário / Email SMTP</label>
+        <type>text</type>
+        <help>Usuário de autenticação no servidor de email.</help>
+    </field>
+    <field>
+        <id>notifications.email.password</id>
+        <label>Senha / App Password</label>
+        <type>password</type>
+        <help>Senha ou chave de aplicativo (App Password do Google/Microsoft).</help>
+    </field>
+    <field>
+        <id>notifications.email.from_addr</id>
+        <label>Endereço do Remetente</label>
+        <type>text</type>
+        <help>Email que aparecerá como remetente (ex: opnsense@homelab.com).</help>
+    </field>
+    <field>
+        <id>notifications.email.to_addrs</id>
+        <label>Destinatários</label>
+        <type>text</type>
+        <help>Lista de emails de destino separados por vírgula.</help>
+    </field>
+
+    <!-- SMS -->
+    <field>
+        <id>notifications.sms.enabled</id>
+        <label>Ativar SMS</label>
+        <type>checkbox</type>
+        <help>Habilita envio de alertas via SMS.</help>
+    </field>
+    <field>
+        <id>notifications.sms.provider</id>
+        <label>Provedor de SMS</label>
+        <type>dropdown</type>
+        <help>Twilio SMS ou Gateway HTTP (modem GSM / app celular).</help>
+    </field>
+    <field>
+        <id>notifications.sms.account_sid</id>
+        <label>Twilio Account SID</label>
+        <type>text</type>
+    </field>
+    <field>
+        <id>notifications.sms.auth_token</id>
+        <label>Twilio Auth Token</label>
+        <type>password</type>
+    </field>
+    <field>
+        <id>notifications.sms.from_number</id>
+        <label>Twilio Número de Origem</label>
+        <type>text</type>
+    </field>
+    <field>
+        <id>notifications.sms.phone</id>
+        <label>Telefone de Destino</label>
+        <type>text</type>
+    </field>
+    <field>
+        <id>notifications.sms.gateway_url</id>
+        <label>URL do Gateway HTTP</label>
+        <type>text</type>
+        <help>URL com tags {phone} e {message}. Ex: http://192.168.1.10:8080/sms?to={phone}&amp;text={message}</help>
+    </field>
+
+    <!-- Webhooks -->
+    <field>
+        <id>notifications.webhook.enabled</id>
+        <label>Ativar Webhook</label>
+        <type>checkbox</type>
+        <help>Habilita disparo para Discord, Ntfy.sh ou webhooks genéricos.</help>
+    </field>
+    <field>
+        <id>notifications.webhook.type</id>
+        <label>Tipo de Webhook</label>
+        <type>dropdown</type>
+    </field>
+    <field>
+        <id>notifications.webhook.url</id>
+        <label>URL do Webhook (Discord / Generic)</label>
+        <type>text</type>
+    </field>
+    <field>
+        <id>notifications.webhook.topic</id>
+        <label>Tópico do Ntfy.sh</label>
+        <type>text</type>
+        <help>Nome do tópico público ou privado no ntfy.sh.</help>
+    </field>
+</form>

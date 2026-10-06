@@ -1,0 +1,191 @@
+<model>
+    <mount>//OPNsense/AutoWoL</mount>
+    <version>1.0.0</version>
+    <description>AutoWoL and Host Health Monitor</description>
+    <items>
+        <general>
+            <enabled type="BooleanField">
+                <default>0</default>
+                <Required>Y</Required>
+            </enabled>
+            <interval type="IntegerField">
+                <default>2</default>
+                <minimum>1</minimum>
+                <maximum>1440</maximum>
+                <Required>Y</Required>
+            </interval>
+            <retry_mode type="OptionField">
+                <default>cron</default>
+                <OptionValues>
+                    <cron>Periódico via Cron</cron>
+                    <immediate>Imediato (Loop de boot)</immediate>
+                </OptionValues>
+                <Required>Y</Required>
+            </retry_mode>
+            <default_broadcast_ip type="TextField">
+                <default>255.255.255.255</default>
+                <Required>Y</Required>
+            </default_broadcast_ip>
+            <default_wol_port type="IntegerField">
+                <default>9</default>
+                <minimum>1</minimum>
+                <maximum>65535</maximum>
+                <Required>Y</Required>
+            </default_wol_port>
+            <check_timeout_seconds type="FloatField">
+                <default>2.0</default>
+                <Required>Y</Required>
+            </check_timeout_seconds>
+            <max_retries type="IntegerField">
+                <default>3</default>
+                <minimum>1</minimum>
+                <maximum>20</maximum>
+                <Required>Y</Required>
+            </max_retries>
+            <boot_grace_period_seconds type="IntegerField">
+                <default>60</default>
+                <minimum>5</minimum>
+                <maximum>600</maximum>
+                <Required>Y</Required>
+            </boot_grace_period_seconds>
+            <alert_cooldown_minutes type="IntegerField">
+                <default>120</default>
+                <minimum>5</minimum>
+                <maximum>1440</maximum>
+                <Required>Y</Required>
+            </alert_cooldown_minutes>
+            <repeat_alerts type="BooleanField">
+                <default>0</default>
+                <Required>Y</Required>
+            </repeat_alerts>
+            <notify_on_recovery type="BooleanField">
+                <default>1</default>
+                <Required>Y</Required>
+            </notify_on_recovery>
+        </general>
+        <hosts>
+            <host type="ArrayField">
+                <enabled type="BooleanField">
+                    <default>1</default>
+                    <Required>Y</Required>
+                </enabled>
+                <name type="TextField">
+                    <Required>Y</Required>
+                </name>
+                <ip type="TextField">
+                    <Required>Y</Required>
+                </ip>
+                <mac type="TextField">
+                    <Required>Y</Required>
+                </mac>
+                <broadcast_ip type="TextField">
+                    <default>255.255.255.255</default>
+                </broadcast_ip>
+                <wol_port type="IntegerField">
+                    <default>9</default>
+                </wol_port>
+                <check_method type="OptionField">
+                    <default>icmp</default>
+                    <OptionValues>
+                        <icmp>ICMP Ping</icmp>
+                        <tcp>Porta TCP</tcp>
+                        <both>Ping com Fallback para TCP</both>
+                    </OptionValues>
+                    <Required>Y</Required>
+                </check_method>
+                <tcp_port type="IntegerField">
+                    <default>3389</default>
+                </tcp_port>
+                <max_retries type="IntegerField">
+                    <default>3</default>
+                </max_retries>
+                <boot_grace_period_seconds type="IntegerField">
+                    <default>60</default>
+                </boot_grace_period_seconds>
+            </host>
+        </hosts>
+        <notifications>
+            <whatsapp>
+                <enabled type="BooleanField">
+                    <default>0</default>
+                </enabled>
+                <provider type="OptionField">
+                    <default>callmebot</default>
+                    <OptionValues>
+                        <callmebot>CallMeBot (Gratuito)</callmebot>
+                        <evolution_api>Evolution API (Self-Hosted)</evolution_api>
+                        <z_api>Z-API</z_api>
+                        <twilio>Twilio WhatsApp</twilio>
+                    </OptionValues>
+                </provider>
+                <phone type="TextField"></phone>
+                <apikey type="TextField"></apikey>
+                <server_url type="TextField"></server_url>
+                <instance type="TextField"></instance>
+                <token type="TextField"></token>
+                <client_token type="TextField"></client_token>
+                <account_sid type="TextField"></account_sid>
+                <auth_token type="TextField"></auth_token>
+                <from_number type="TextField"></from_number>
+            </whatsapp>
+            <telegram>
+                <enabled type="BooleanField">
+                    <default>0</default>
+                </enabled>
+                <bot_token type="TextField"></bot_token>
+                <chat_id type="TextField"></chat_id>
+            </telegram>
+            <email>
+                <enabled type="BooleanField">
+                    <default>0</default>
+                </enabled>
+                <host type="TextField"></host>
+                <port type="IntegerField">
+                    <default>587</default>
+                </port>
+                <use_tls type="BooleanField">
+                    <default>1</default>
+                </use_tls>
+                <use_ssl type="BooleanField">
+                    <default>0</default>
+                </use_ssl>
+                <username type="TextField"></username>
+                <password type="TextField"></password>
+                <from_addr type="TextField"></from_addr>
+                <to_addrs type="TextField"></to_addrs>
+            </email>
+            <sms>
+                <enabled type="BooleanField">
+                    <default>0</default>
+                </enabled>
+                <provider type="OptionField">
+                    <default>twilio</default>
+                    <OptionValues>
+                        <twilio>Twilio SMS</twilio>
+                        <http_gateway>Gateway HTTP Customizado</http_gateway>
+                    </OptionValues>
+                </provider>
+                <account_sid type="TextField"></account_sid>
+                <auth_token type="TextField"></auth_token>
+                <from_number type="TextField"></from_number>
+                <phone type="TextField"></phone>
+                <gateway_url type="TextField"></gateway_url>
+            </sms>
+            <webhook>
+                <enabled type="BooleanField">
+                    <default>0</default>
+                </enabled>
+                <type type="OptionField">
+                    <default>discord</default>
+                    <OptionValues>
+                        <discord>Discord Webhook</discord>
+                        <ntfy>Ntfy.sh (Push no Celular)</ntfy>
+                        <generic>JSON Genérico</generic>
+                    </OptionValues>
+                </type>
+                <url type="TextField"></url>
+                <topic type="TextField"></topic>
+            </webhook>
+        </notifications>
+    </items>
+</model>

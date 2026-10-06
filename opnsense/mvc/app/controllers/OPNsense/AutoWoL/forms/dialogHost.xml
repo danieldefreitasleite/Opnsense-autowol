@@ -1,0 +1,62 @@
+<form>
+    <field>
+        <id>host.enabled</id>
+        <label>Ativo</label>
+        <type>checkbox</type>
+        <help>Habilitar monitoramento para esta máquina.</help>
+    </field>
+    <field>
+        <id>host.name</id>
+        <label>Nome do Host</label>
+        <type>text</type>
+        <help>Identificador amigável do servidor ou computador (ex: NAS-Storage, Servidor Proxmox, Estação TI).</help>
+    </field>
+    <field>
+        <id>host.ip</id>
+        <label>Endereço IPv4</label>
+        <type>text</type>
+        <help>Endereço IP da máquina na rede local (ex: 192.168.1.50).</help>
+    </field>
+    <field>
+        <id>host.mac</id>
+        <label>Endereço MAC</label>
+        <type>text</type>
+        <help>Endereço físico de rede da placa mãe (ex: 00:11:22:33:44:55).</help>
+    </field>
+    <field>
+        <id>host.check_method</id>
+        <label>Método de Checagem</label>
+        <type>dropdown</type>
+        <help>Como verificar se o host está ligado: ICMP Ping, Porta TCP ou Ambos (Ping com fallback em TCP).</help>
+    </field>
+    <field>
+        <id>host.tcp_port</id>
+        <label>Porta TCP (Opcional)</label>
+        <type>text</type>
+        <help>Porta de serviço para checagem TCP (ex: 3389 para RDP Windows, 22 para SSH Linux, 445 para SMB).</help>
+    </field>
+    <field>
+        <id>host.broadcast_ip</id>
+        <label>IP de Broadcast</label>
+        <type>text</type>
+        <help>Deixe em branco para usar o padrão (255.255.255.255) ou defina a sub-rede específica (ex: 192.168.1.255).</help>
+    </field>
+    <field>
+        <id>host.wol_port</id>
+        <label>Porta WoL</label>
+        <type>text</type>
+        <help>Porta UDP para o Wake-on-LAN (padrão 9).</help>
+    </field>
+    <field>
+        <id>host.max_retries</id>
+        <label>Tentativas Específicas</label>
+        <type>text</type>
+        <help>Máximo de tentativas de WoL para este host (padrão 3).</help>
+    </field>
+    <field>
+        <id>host.boot_grace_period_seconds</id>
+        <label>Tempo de Boot (Segundos)</label>
+        <type>text</type>
+        <help>Tempo de inicialização específico para este host.</help>
+    </field>
+</form>

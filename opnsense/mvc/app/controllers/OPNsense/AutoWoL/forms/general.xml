@@ -1,0 +1,56 @@
+<form>
+    <field>
+        <id>general.enabled</id>
+        <label>Ativar AutoWoL</label>
+        <type>checkbox</type>
+        <help>Habilita o monitoramento contínuo e envio automático de Wake-on-LAN para as máquinas cadastradas.</help>
+    </field>
+    <field>
+        <id>general.interval</id>
+        <label>Intervalo de Checagem (Minutos)</label>
+        <type>text</type>
+        <help>Frequência com que o OPNsense executará a checagem dos hosts (ex: a cada 2 ou 5 minutos). O cron do sistema é configurado automaticamente.</help>
+    </field>
+    <field>
+        <id>general.retry_mode</id>
+        <label>Modo de Retentativas</label>
+        <type>dropdown</type>
+        <help>Periódico via Cron (recomendado, distribui as tentativas entre os ciclos do cron) ou Imediato (aguarda o boot no mesmo ciclo).</help>
+    </field>
+    <field>
+        <id>general.default_broadcast_ip</id>
+        <label>IP de Broadcast Padrão</label>
+        <type>text</type>
+        <help>Endereço de broadcast da rede para envio dos Magic Packets (ex: 255.255.255.255 ou 192.168.1.255).</help>
+    </field>
+    <field>
+        <id>general.default_wol_port</id>
+        <label>Porta WoL Padrão</label>
+        <type>text</type>
+        <help>Porta UDP para Wake-on-LAN (geralmente porta 9 ou 7).</help>
+    </field>
+    <field>
+        <id>general.max_retries</id>
+        <label>Máximo de Tentativas de WoL</label>
+        <type>text</type>
+        <help>Número de vezes que o OPNsense tentará ligar o host antes de considerar falha definitiva e disparar os alertas.</help>
+    </field>
+    <field>
+        <id>general.boot_grace_period_seconds</id>
+        <label>Tempo de Boot (Segundos)</label>
+        <type>text</type>
+        <help>Tempo de tolerância para o computador ligar a BIOS e inicializar o sistema operacional (ex: 60 ou 90 segundos).</help>
+    </field>
+    <field>
+        <id>general.alert_cooldown_minutes</id>
+        <label>Cooldown de Alertas (Minutos)</label>
+        <type>text</type>
+        <help>Tempo mínimo de espera antes de repetir um alerta para a mesma máquina caída, evitando sobrecarga de mensagens.</help>
+    </field>
+    <field>
+        <id>general.notify_on_recovery</id>
+        <label>Notificar Restabelecimento</label>
+        <type>checkbox</type>
+        <help>Dispara uma mensagem informando que a máquina ligou com sucesso e voltou a responder na rede.</help>
+    </field>
+</form>

@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# PROVIDE: autowol
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="autowol"
+rcvar="autowol_enable"
+
+load_rc_config $name
+
+: ${autowol_enable:="NO"}
+: ${autowol_config:="/usr/local/etc/autowol/config.json"}
+: ${autowol_script:="/usr/local/opnsense/scripts/autowol/autowol.py"}
+
+command="/usr/local/bin/python3"
+command_args="${autowol_script} --config ${autowol_config}"
+
+extra_commands="check status wake"
+check_cmd="autowol_check"
+status_cmd="autowol_status"
+wake_cmd="autowol_wake"
+
+autowol_check()
+{
+    echo "Executando checagem do AutoWoL..."
+    ${command} ${command_args} --action check
+}
+
+autowol_status()
+{
+    echo "Status dos hosts monitorados:"
+    ${command} ${command_args} --action status
+}
+
+autowol_wake()
+{
+    if [ -z "$1" ]; then
+        echo "Uso: service autowol wake <host_id_ou_nome>"
+        return 1
+    fi
+    ${command} ${command_args} --action wake --host "$1"
+}
+
+run_rc_command "$1"

@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "settings": {
+    "retry_mode": "cron",
+    "default_broadcast_ip": "192.168.1.255",
+    "default_wol_port": 9,
+    "check_timeout_seconds": 2.0,
+    "max_retries": 3,
+    "boot_grace_period_seconds": 60,
+    "alert_cooldown_minutes": 120,
+    "repeat_alerts": false,
+    "notify_on_recovery": true,
+    "log_file": "/var/log/autowol.log"
+  },
+  "hosts": [
+    {
+      "id": "srv-nas",
+      "name": "Servidor NAS / Storage",
+      "ip": "192.168.1.50",
+      "mac": "00:11:32:AA:BB:CC",
+      "broadcast_ip": "192.168.1.255",
+      "wol_port": 9,
+      "check_method": "icmp",
+      "max_retries": 3,
+      "boot_grace_period_seconds": 90,
+      "enabled": true
+    },
+    {
+      "id": "workstation-win",
+      "name": "Estação Windows 11",
+      "ip": "192.168.1.120",
+      "mac": "B4:2E:99:11:22:33",
+      "broadcast_ip": "192.168.1.255",
+      "wol_port": 9,
+      "check_method": "both",
+      "tcp_port": 3389,
+      "max_retries": 2,
+      "boot_grace_period_seconds": 60,
+      "enabled": true
+    }
+  ],
+  "notifications": {
+    "whatsapp": {
+      "enabled": false,
+      "provider": "callmebot",
+      "phone": "+5511999999999",
+      "apikey": "123456",
+      "server_url": "https://evolution.seuhomelab.com",
+      "instance": "instancia-opnsense"
+    },
+    "telegram": {
+      "enabled": false,
+      "bot_token": "123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
+      "chat_id": "12345678",
+      "parse_mode": "HTML"
+    },
+    "email": {
+      "enabled": false,
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "use_tls": true,
+      "use_ssl": false,
+      "username": "seu-email@gmail.com",
+      "password": "sua-app-password-aqui",
+      "from_addr": "OPNsense AutoWoL <seu-email@gmail.com>",
+      "to_addrs": ["admin@seuhomelab.com"]
+    },
+    "sms": {
+      "enabled": false,
+      "provider": "twilio",
+      "account_sid": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "auth_token": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+      "from_number": "+15551234567",
+      "phone": "+5511999999999"
+    },
+    "webhook": {
+      "enabled": false,
+      "type": "discord",
+      "url": "https://discord.com/api/webhooks/xxxx/yyyy"
+    }
+  }
+}

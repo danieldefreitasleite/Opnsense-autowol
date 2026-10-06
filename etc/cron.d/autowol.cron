@@ -1,0 +1,3 @@
+# AutoWoL Cron Job for OPNsense / FreeBSD
+# Executes host monitor and Auto-Wake check every 2 minutes
+*/2 * * * * root /usr/local/opnsense/scripts/autowol/autowol.py --action check > /dev/null 2>&1

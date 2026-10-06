@@ -1,0 +1,80 @@
+{
+  "settings": {
+    "retry_mode": "{{ OPNsense.AutoWoL.general.retry_mode|default('cron') }}",
+    "default_broadcast_ip": "{{ OPNsense.AutoWoL.general.default_broadcast_ip|default('255.255.255.255') }}",
+    "default_wol_port": {{ OPNsense.AutoWoL.general.default_wol_port|default('9') }},
+    "check_timeout_seconds": {{ OPNsense.AutoWoL.general.check_timeout_seconds|default('2.0') }},
+    "max_retries": {{ OPNsense.AutoWoL.general.max_retries|default('3') }},
+    "boot_grace_period_seconds": {{ OPNsense.AutoWoL.general.boot_grace_period_seconds|default('60') }},
+    "alert_cooldown_minutes": {{ OPNsense.AutoWoL.general.alert_cooldown_minutes|default('120') }},
+    "repeat_alerts": {% if OPNsense.AutoWoL.general.repeat_alerts|default('0') == '1' %}true{% else %}false{% endif %},
+    "notify_on_recovery": {% if OPNsense.AutoWoL.general.notify_on_recovery|default('1') == '1' %}true{% else %}false{% endif %},
+    "log_file": "/var/log/autowol.log"
+  },
+  "hosts": [
+    {% if OPNsense.AutoWoL.hosts is defined and OPNsense.AutoWoL.hosts.host is defined %}
+    {% for host_uuid, host in OPNsense.AutoWoL.hosts.host.items() %}
+    {
+      "id": "{{ host_uuid }}",
+      "name": "{{ host.name }}",
+      "ip": "{{ host.ip }}",
+      "mac": "{{ host.mac }}",
+      "broadcast_ip": "{{ host.broadcast_ip|default('255.255.255.255') }}",
+      "wol_port": {{ host.wol_port|default('9') }},
+      "check_method": "{{ host.check_method|default('icmp') }}",
+      "tcp_port": {% if host.tcp_port is defined and host.tcp_port != '' %}{{ host.tcp_port }}{% else %}null{% endif %},
+      "max_retries": {{ host.max_retries|default('3') }},
+      "boot_grace_period_seconds": {{ host.boot_grace_period_seconds|default('60') }},
+      "enabled": {% if host.enabled|default('1') == '1' %}true{% else %}false{% endif %}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+    {% endif %}
+  ],
+  "notifications": {
+    "whatsapp": {
+      "enabled": {% if OPNsense.AutoWoL.notifications.whatsapp.enabled|default('0') == '1' %}true{% else %}false{% endif %},
+      "provider": "{{ OPNsense.AutoWoL.notifications.whatsapp.provider|default('callmebot') }}",
+      "phone": "{{ OPNsense.AutoWoL.notifications.whatsapp.phone|default('') }}",
+      "apikey": "{{ OPNsense.AutoWoL.notifications.whatsapp.apikey|default('') }}",
+      "server_url": "{{ OPNsense.AutoWoL.notifications.whatsapp.server_url|default('') }}",
+      "instance": "{{ OPNsense.AutoWoL.notifications.whatsapp.instance|default('') }}",
+      "token": "{{ OPNsense.AutoWoL.notifications.whatsapp.token|default('') }}",
+      "client_token": "{{ OPNsense.AutoWoL.notifications.whatsapp.client_token|default('') }}",
+      "account_sid": "{{ OPNsense.AutoWoL.notifications.whatsapp.account_sid|default('') }}",
+      "auth_token": "{{ OPNsense.AutoWoL.notifications.whatsapp.auth_token|default('') }}",
+      "from_number": "{{ OPNsense.AutoWoL.notifications.whatsapp.from_number|default('') }}"
+    },
+    "telegram": {
+      "enabled": {% if OPNsense.AutoWoL.notifications.telegram.enabled|default('0') == '1' %}true{% else %}false{% endif %},
+      "bot_token": "{{ OPNsense.AutoWoL.notifications.telegram.bot_token|default('') }}",
+      "chat_id": "{{ OPNsense.AutoWoL.notifications.telegram.chat_id|default('') }}",
+      "parse_mode": "HTML"
+    },
+    "email": {
+      "enabled": {% if OPNsense.AutoWoL.notifications.email.enabled|default('0') == '1' %}true{% else %}false{% endif %},
+      "host": "{{ OPNsense.AutoWoL.notifications.email.host|default('') }}",
+      "port": {{ OPNsense.AutoWoL.notifications.email.port|default('587') }},
+      "use_tls": {% if OPNsense.AutoWoL.notifications.email.use_tls|default('1') == '1' %}true{% else %}false{% endif %},
+      "use_ssl": {% if OPNsense.AutoWoL.notifications.email.use_ssl|default('0') == '1' %}true{% else %}false{% endif %},
+      "username": "{{ OPNsense.AutoWoL.notifications.email.username|default('') }}",
+      "password": "{{ OPNsense.AutoWoL.notifications.email.password|default('') }}",
+      "from_addr": "{{ OPNsense.AutoWoL.notifications.email.from_addr|default('') }}",
+      "to_addrs": "{{ OPNsense.AutoWoL.notifications.email.to_addrs|default('') }}"
+    },
+    "sms": {
+      "enabled": {% if OPNsense.AutoWoL.notifications.sms.enabled|default('0') == '1' %}true{% else %}false{% endif %},
+      "provider": "{{ OPNsense.AutoWoL.notifications.sms.provider|default('twilio') }}",
+      "account_sid": "{{ OPNsense.AutoWoL.notifications.sms.account_sid|default('') }}",
+      "auth_token": "{{ OPNsense.AutoWoL.notifications.sms.auth_token|default('') }}",
+      "from_number": "{{ OPNsense.AutoWoL.notifications.sms.from_number|default('') }}",
+      "phone": "{{ OPNsense.AutoWoL.notifications.sms.phone|default('') }}",
+      "gateway_url": "{{ OPNsense.AutoWoL.notifications.sms.gateway_url|default('') }}"
+    },
+    "webhook": {
+      "enabled": {% if OPNsense.AutoWoL.notifications.webhook.enabled|default('0') == '1' %}true{% else %}false{% endif %},
+      "type": "{{ OPNsense.AutoWoL.notifications.webhook.type|default('discord') }}",
+      "url": "{{ OPNsense.AutoWoL.notifications.webhook.url|default('') }}",
+      "topic": "{{ OPNsense.AutoWoL.notifications.webhook.topic|default('') }}"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+<menu>
+    <Services>
+        <AutoWoL VisibleName="AutoWoL" cssClass="fa fa-power-off fa-fw">
+            <Configuration VisibleName="Settings" url="/ui/autowol" order="10"/>
+        </AutoWoL>
+    </Services>
+</menu>

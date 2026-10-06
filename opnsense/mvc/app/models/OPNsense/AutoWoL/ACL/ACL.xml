@@ -1,0 +1,9 @@
+<acl>
+    <page-services-autowol>
+        <name>Services: AutoWoL Monitor</name>
+        <patterns>
+            <pattern>ui/autowol*</pattern>
+            <pattern>api/autowol/*</pattern>
+        </patterns>
+    </page-services-autowol>
+</acl>
