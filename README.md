@@ -35,7 +35,7 @@ No terminal SSH do seu OPNsense (como `root`), execute:
 
 ```sh
 cd /tmp
-git clone https://github.com/seu-usuario/Opnsense-script.git autowol
+git clone https://github.com/seu-usuario/Opnsense-autowol.git autowol
 cd autowol
 chmod +x install.sh
 ./install.sh
@@ -48,7 +48,7 @@ Pronto! Atualize a página do seu navegador: o menu **Services -> AutoWoL** já 
 ## 📁 Estrutura do Plugin MVC
 
 ```
-Opnsense-script/
+Opnsense-autowol/
 ├── Makefile                               # Compilação e empacotamento FreeBSD (.pkg)
 ├── install.sh                             # Instalador de 1 comando para o OPNsense
 ├── uninstall.sh                           # Desinstalador limpo

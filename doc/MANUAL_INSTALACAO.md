@@ -10,7 +10,7 @@ Acesse o terminal do OPNsense (via SSH como `root`) apenas para rodar o instalad
 
 ```sh
 cd /tmp
-git clone https://github.com/seu-usuario/Opnsense-script.git autowol
+git clone https://github.com/seu-usuario/Opnsense-autowol.git autowol
 cd autowol
 chmod +x install.sh
 ./install.sh
