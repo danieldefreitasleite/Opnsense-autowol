@@ -36,8 +36,14 @@ DEFAULT_LOG_PATHS = [
 ]
 
 
+class FlushingFileHandler(logging.FileHandler):
+    def emit(self, record):
+        super().emit(record)
+        self.flush()
+
+
 def setup_logging(verbose: bool = False, log_file: str = None) -> logging.Logger:
-    """Configures logging to console and optional log file."""
+    """Configures logging to console and persistent log file."""
     logger = logging.getLogger("autowol")
     logger.setLevel(logging.DEBUG if verbose else logging.INFO)
     logger.handlers.clear()
@@ -64,7 +70,7 @@ def setup_logging(verbose: bool = False, log_file: str = None) -> logging.Logger
 
     if target_log_file:
         try:
-            file_handler = logging.FileHandler(target_log_file, encoding="utf-8")
+            file_handler = FlushingFileHandler(target_log_file, encoding="utf-8")
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
         except Exception as e:
@@ -142,17 +148,57 @@ class AutoWoLEngine:
             }
         return self.state[host_id]
 
+    def get_status_overview(self) -> list[dict]:
+        """
+        Returns a structured list of status for all configured hosts,
+        combining configuration details with runtime state.
+        """
+        overview = []
+        for host in self.hosts:
+            h_id = host.get("id") or host.get("name")
+            h_state = self.state.get(h_id, {})
+            max_retries = int(host.get("max_retries") or self.settings.get("max_retries", 3))
+
+            raw_status = h_state.get("status", "NOT_CHECKED")
+            attempts = h_state.get("attempts", 0)
+            last_seen = h_state.get("last_seen_online")
+            last_details = h_state.get("last_details")
+
+            last_seen_formatted = None
+            if last_seen:
+                try:
+                    dt = datetime.fromisoformat(last_seen)
+                    last_seen_formatted = dt.strftime("%d/%m/%Y %H:%M:%S")
+                except Exception:
+                    last_seen_formatted = str(last_seen)
+
+            overview.append({
+                "id": h_id,
+                "name": host.get("name", h_id),
+                "ip": host.get("ip", "N/A"),
+                "mac": host.get("mac", "N/A"),
+                "enabled": host.get("enabled", True),
+                "check_method": host.get("check_method", "icmp"),
+                "status": raw_status,
+                "attempts": attempts,
+                "max_retries": max_retries,
+                "last_seen_online": last_seen_formatted or "Ainda não detectado",
+                "last_details": last_details or "Aguardando primeira verificação"
+            })
+        return overview
+
     def check_all_hosts(self) -> dict[str, dict]:
         """Iterates over all enabled hosts and performs check / wake / alert lifecycle."""
+        enabled_hosts = [h for h in self.hosts if h.get("enabled", True)]
+        self.logger.info(f"=== Ciclo de Checagem AutoWoL Iniciado ({len(enabled_hosts)} hosts ativos) ===")
         results = {}
-        for host in self.hosts:
-            if not host.get("enabled", True):
-                continue
+        for host in enabled_hosts:
             h_id = host.get("id") or host.get("name")
-            self.logger.info(f"--- Checando Host: {host.get('name')} ({host.get('ip')}) ---")
+            self.logger.info(f"[Host: {host.get('name')}] Iniciando verificação IP: {host.get('ip')}...")
             results[h_id] = self.process_host(host)
 
         save_state(self.state, self.state_file)
+        self.logger.info(f"=== Ciclo de Checagem AutoWoL Finalizado. Estado persistido em {self.state_file} ===")
         return results
 
     def process_host(self, host: dict) -> dict:
@@ -178,6 +224,7 @@ class AutoWoLEngine:
 
         # Step 1: Probe host
         online, probe_method, details = check_host(ip, method, tcp_port, timeout_sec)
+        h_state["last_details"] = details
         self.logger.debug(f"Host {h_name} probe: online={online} method={probe_method} details={details}")
 
         if online:
@@ -362,9 +409,8 @@ def main():
         ok = engine.wake_single_host(args.host)
         sys.exit(0 if ok else 1)
     elif args.action == "status":
-        state, s_path = load_state(args.state)
-        print(f"Arquivo de estado: {s_path}")
-        print(json.dumps(state, indent=2, ensure_ascii=False))
+        overview = engine.get_status_overview()
+        print(json.dumps(overview, ensure_ascii=False))
     elif args.action == "test-alert":
         results = engine.test_alert(args.channel)
         print(json.dumps({k: {"success": v[0], "message": v[1]} for k, v in results.items()}, indent=2))

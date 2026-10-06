@@ -47,7 +47,27 @@ class ServiceController extends ApiControllerBase
         $backend = new Backend();
         $response = $backend->configdRun('autowol status');
         $data = json_decode($response, true);
-        return ['status' => 'ok', 'data' => $data ?: $response];
+        if (!is_array($data)) {
+            $data = [];
+        }
+        return ['status' => 'ok', 'data' => $data];
+    }
+
+    public function logsAction()
+    {
+        $backend = new Backend();
+        $response = $backend->configdRun('autowol logs');
+        return ['status' => 'ok', 'logs' => $response ?: "Nenhum log registrado ainda."];
+    }
+
+    public function clearLogsAction()
+    {
+        if ($this->request->isPost()) {
+            $backend = new Backend();
+            $backend->configdRun('autowol clearlogs');
+            return ['status' => 'ok', 'message' => 'Logs limpos com sucesso.'];
+        }
+        return ['status' => 'failed'];
     }
 
     public function testAlertAction($channel = 'all')
