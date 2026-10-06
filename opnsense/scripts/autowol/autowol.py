@@ -196,7 +196,7 @@ def load_config(config_path: str = None) -> dict:
 
     # 1. Attempt reading live OPNsense config.xml directly
     xml_cfg = load_from_opnsense_xml("/conf/config.xml")
-    if xml_cfg and xml_cfg.get("hosts"):
+    if xml_cfg is not None:
         return xml_cfg
 
     # 2. Check JSON config candidates
@@ -204,16 +204,9 @@ def load_config(config_path: str = None) -> dict:
         if p and Path(p).is_file():
             try:
                 with open(p, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    if xml_cfg and not data.get("hosts") and xml_cfg.get("hosts"):
-                        data["hosts"] = xml_cfg["hosts"]
-                    return data
+                    return json.load(f)
             except Exception:
                 continue
-
-    # 3. Fall back to XML config even if hosts is empty
-    if xml_cfg:
-        return xml_cfg
 
     # 4. Fallback safe default
     return {

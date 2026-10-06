@@ -311,6 +311,35 @@ class TestOPNsenseXmlParsing(unittest.TestCase):
             if os.path.exists(tf_path):
                 os.remove(tf_path)
 
+    def test_load_from_opnsense_xml_empty_hosts(self):
+        import tempfile
+        from autowol import load_config
+        sample_xml = """<opnsense>
+  <OPNsense>
+    <AutoWoL>
+      <general>
+        <enabled>1</enabled>
+        <interval>5</interval>
+        <max_retries>5</max_retries>
+      </general>
+      <hosts></hosts>
+    </AutoWoL>
+  </OPNsense>
+</opnsense>
+"""
+        with tempfile.NamedTemporaryFile("w", suffix=".xml", delete=False, encoding="utf-8") as tf:
+            tf.write(sample_xml)
+            tf_path = tf.name
+
+        try:
+            cfg = load_config(tf_path)
+            self.assertIsNotNone(cfg)
+            self.assertEqual(cfg["settings"]["max_retries"], 5)
+            self.assertEqual(len(cfg["hosts"]), 0)
+        finally:
+            if os.path.exists(tf_path):
+                os.remove(tf_path)
+
 
 if __name__ == "__main__":
     unittest.main()

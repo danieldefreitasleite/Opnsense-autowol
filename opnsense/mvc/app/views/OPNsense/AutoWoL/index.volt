@@ -8,8 +8,13 @@
         var logTimer = null;
 
         // Carrega dados das configurações gerais e notificações
-        mapDataToFormUI({'frm_general_settings': "/api/autowol/settings/get"});
-        mapDataToFormUI({'frm_notifications': "/api/autowol/settings/get"});
+        mapDataToFormUI({
+            'frm_general_settings': "/api/autowol/settings/get",
+            'frm_notifications': "/api/autowol/settings/get"
+        }).done(function() {
+            formatTokenizersUI();
+            $('.selectpicker').selectpicker('refresh');
+        });
 
         // Inicializa o BootGrid de Hosts
         $("#grid-hosts").UIBootgrid({
@@ -62,6 +67,15 @@
         $("#btn_save_general").click(function() {
             saveFormToEndpoint("/api/autowol/settings/set", 'frm_general_settings', function() {
                 $("#btn_apply").addClass("btn-danger").removeClass("btn-primary");
+                BootstrapDialog.show({
+                    title: "{{ lang._('Configurações Gerais') }}",
+                    message: "{{ lang._('Configurações gerais salvas com sucesso!') }}",
+                    type: BootstrapDialog.TYPE_SUCCESS,
+                    buttons: [{
+                        label: "{{ lang._('OK') }}",
+                        action: function(dialog) { dialog.close(); loadStatus(); }
+                    }]
+                });
             });
         });
 
@@ -69,23 +83,38 @@
         $("#btn_save_notifications").click(function() {
             saveFormToEndpoint("/api/autowol/settings/set", 'frm_notifications', function() {
                 $("#btn_apply").addClass("btn-danger").removeClass("btn-primary");
-            });
-        });
-
-        // Botão Aplicar Mudanças (Reconfigura templates e cron automaticamente)
-        $("#btn_apply").click(function() {
-            $("#btn_apply_icon").addClass("fa-spin");
-            ajaxCall("/api/autowol/service/reconfigure", {}, function(data, status) {
-                $("#btn_apply_icon").removeClass("fa-spin");
-                $("#btn_apply").removeClass("btn-danger").addClass("btn-primary");
                 BootstrapDialog.show({
-                    title: "{{ lang._('AutoWoL Aplicado') }}",
-                    message: "{{ lang._('Configurações salvas e cron do sistema reconfigurado com sucesso!') }}",
+                    title: "{{ lang._('Canais de Notificação') }}",
+                    message: "{{ lang._('Configurações de notificações salvas com sucesso!') }}",
                     type: BootstrapDialog.TYPE_SUCCESS,
                     buttons: [{
                         label: "{{ lang._('OK') }}",
-                        action: function(dialog) { dialog.close(); loadLogs(); }
+                        action: function(dialog) { dialog.close(); }
                     }]
+                });
+            });
+        });
+
+        // Botão Aplicar Mudanças (Salva formulários e reconfigura templates e cron automaticamente)
+        $("#btn_apply").click(function() {
+            $("#btn_apply_icon").addClass("fa-spin");
+            saveFormToEndpoint("/api/autowol/settings/set", 'frm_general_settings', function() {
+                saveFormToEndpoint("/api/autowol/settings/set", 'frm_notifications', function() {
+                    ajaxCall("/api/autowol/service/reconfigure", {}, function(data, status) {
+                        $("#btn_apply_icon").removeClass("fa-spin");
+                        $("#btn_apply").removeClass("btn-danger").addClass("btn-primary");
+                        loadStatus();
+                        loadLogs();
+                        BootstrapDialog.show({
+                            title: "{{ lang._('AutoWoL Aplicado') }}",
+                            message: "{{ lang._('Todas as configurações foram salvas e o cron do sistema foi reconfigurado com sucesso!') }}",
+                            type: BootstrapDialog.TYPE_SUCCESS,
+                            buttons: [{
+                                label: "{{ lang._('OK') }}",
+                                action: function(dialog) { dialog.close(); }
+                            }]
+                        });
+                    });
                 });
             });
         });
